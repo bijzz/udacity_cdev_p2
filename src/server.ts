@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+
 
 (async () => {
 
@@ -12,6 +13,7 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
+
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
@@ -29,8 +31,37 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
   /**************************************************************************** */
 
+  // sample call:
+  // http://localhost:8082/filteredImage?image_url=https://image.shutterstock.com/image-photo/cat-260nw-649073437.jpg
+  // sample image - https://image.shutterstock.com/image-photo/cat-260nw-649073437.jpg
+
+  app.get("/filteredImage/",  async ( req:Request, res:Response, next ) => {
+    
+    let { image_url } = req.query;
+    if ( !image_url ) {
+      return res.status(400)
+                .send(`image_url is required`);
+    }
+
+    let imagePath : string = await filterImageFromURL(image_url)
+
+    res.sendFile(imagePath, function (err) {
+      if (err) {
+        next(err);
+      } else {
+        console.log('Sent:', imagePath)
+        deleteLocalFiles([imagePath]);
+      }
+    })
+
+   return
+    
+  
+  } );
+
   //! END @TODO1
   
+
   // Root Endpoint
   // Displays a simple message to the user
   app.get( "/", async ( req, res ) => {
